@@ -71,7 +71,10 @@ function burst(el: Element | null) {
           opacity: 0,
         },
       ],
-      { duration: 900 + Math.random() * 500, easing: "cubic-bezier(.2,.7,.3,1)" },
+      {
+        duration: 900 + Math.random() * 500,
+        easing: "cubic-bezier(.2,.7,.3,1)",
+      },
     ).onfinish = () => p.remove();
   }
 }
@@ -98,16 +101,17 @@ export default function PublicPage() {
       <main className="pl-main">
         <header className="pl-header pl-anim" style={anim(0)}>
           <div className="pl-eyebrow">
-            <span className="pl-dot" style={{ "--dot": "var(--mint)" } as CSSProperties} />
+            <span
+              className="pl-dot"
+              style={{ "--dot": "var(--mint)" } as CSSProperties}
+            />
             <span>საჩუქრების სია</span>
           </div>
           <h1>
-            რა შეგიძლია აჩუქო <span className="pl-accent">კონსტანტინე თავაძეს</span>
+            რა შეგიძლია აჩუქო{" "}
+            <span className="pl-accent">კონსტანტინე თავაძეს</span>
           </h1>
-          <p className="pl-lead">
-            დაბადების დღეზე, ან ისედაც, თუ გაგისწორდება. მონიშნე, რასაც ყიდულობ
-            — რომ სხვებმაც იცოდნენ.
-          </p>
+          <p className="pl-lead">დაბადების დღეზე, ან ისედაც, თუ გაგისწორდება</p>
         </header>
 
         {(error || giftsError) && (
@@ -131,7 +135,10 @@ export default function PublicPage() {
         <section className="pl-abroad pl-anim" style={anim(1)}>
           <div className="pl-abroad-head">
             <div className="pl-eyebrow">
-              <span className="pl-dot" style={{ "--dot": "var(--violet)" } as CSSProperties} />
+              <span
+                className="pl-dot"
+                style={{ "--dot": "var(--violet)" } as CSSProperties}
+              />
               <span>თუ სადმე მიდიხარ</span>
             </div>
             <h2>
