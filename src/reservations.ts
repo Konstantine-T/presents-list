@@ -43,12 +43,12 @@ function useLiveTable<T>(table: string, columns: string, order?: string) {
 }
 
 export function useGifts() {
-  const { rows, loading, error, reload } = useLiveTable<Gift>(
+  const { rows, setRows, loading, error, reload } = useLiveTable<Gift>(
     "gifts",
     "id, section, position, text",
     "position",
   );
-  return { gifts: rows, loading, error, reload };
+  return { gifts: rows, setGifts: setRows, loading, error, reload };
 }
 
 export function useReservations() {

@@ -1,5 +1,23 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { ADMIN_EMAIL, sectionTitles, type Gift, type Section } from "./gifts";
 import Linkified from "./Linkified";
 import { supabase, useGifts, useReservations } from "./reservations";
@@ -76,7 +94,16 @@ function Login() {
 }
 
 function Editor() {
-  const { gifts, error: giftsError, reload } = useGifts();
+  const { gifts, setGifts, error: giftsError, reload } = useGifts();
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
   const { reserved } = useReservations();
   const [error, setError] = useState<string | null>(null);
 
@@ -103,14 +130,32 @@ function Editor() {
     run(db.from("gifts").delete().eq("id", gift.id));
   };
 
-  const move = async (a: Gift, b: Gift | undefined) => {
-    if (!b) return;
-    const { error } = await db
-      .from("gifts")
-      .update({ position: b.position })
-      .eq("id", a.id);
-    if (error) return setError(error.message);
-    await run(db.from("gifts").update({ position: a.position }).eq("id", b.id));
+  const reorder = async (items: Gift[], { active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const from = items.findIndex((g) => g.id === active.id);
+    const to = items.findIndex((g) => g.id === over.id);
+    const moved = arrayMove(items, from, to).map((g, i) => ({
+      ...g,
+      position: i + 1,
+    }));
+    const changed = moved.filter(
+      (g) => g.position !== items.find((o) => o.id === g.id)?.position,
+    );
+
+    // show the new order right away, then save it
+    const byId = new Map(moved.map((g) => [g.id, g]));
+    setGifts(
+      gifts
+        .map((g) => byId.get(g.id) ?? g)
+        .sort((a, b) => a.position - b.position),
+    );
+    const results = await Promise.all(
+      changed.map((g) =>
+        db.from("gifts").update({ position: g.position }).eq("id", g.id),
+      ),
+    );
+    setError(results.find((r) => r.error)?.error?.message ?? null);
+    await reload();
   };
 
   return (
@@ -129,19 +174,30 @@ function Editor() {
         return (
           <section key={section}>
             <h2>{sectionTitles[section]}</h2>
-            <ul className="admin-list">
-              {items.map((gift, i) => (
-                <AdminRow
-                  key={gift.id}
-                  gift={gift}
-                  reserved={section === "birthday" && reserved.has(gift.id)}
-                  onSave={(text) => save(gift.id, text)}
-                  onDelete={() => remove(gift)}
-                  onUp={() => move(gift, items[i - 1])}
-                  onDown={() => move(gift, items[i + 1])}
-                />
-              ))}
-            </ul>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(e) => reorder(items, e)}
+            >
+              <SortableContext
+                items={items.map((g) => g.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className="admin-list">
+                  {items.map((gift) => (
+                    <AdminRow
+                      key={gift.id}
+                      gift={gift}
+                      reserved={
+                        section === "birthday" && reserved.has(gift.id)
+                      }
+                      onSave={(text) => save(gift.id, text)}
+                      onDelete={() => remove(gift)}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
             <AddForm onAdd={(text) => add(section, text)} />
           </section>
         );
@@ -155,11 +211,18 @@ function AdminRow(props: {
   reserved: boolean;
   onSave: (text: string) => Promise<void>;
   onDelete: () => void;
-  onUp: () => void;
-  onDown: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(props.gift.text);
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.gift.id });
 
   const save = async () => {
     if (!text.trim()) return;
@@ -168,15 +231,20 @@ function AdminRow(props: {
   };
 
   return (
-    <li>
-      <div className="row-actions">
-        <button onClick={props.onUp} title="ზემოთ">
-          ↑
-        </button>
-        <button onClick={props.onDown} title="ქვემოთ">
-          ↓
-        </button>
-      </div>
+    <li
+      ref={setNodeRef}
+      className={isDragging ? "dragging" : undefined}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+    >
+      <button
+        ref={setActivatorNodeRef}
+        className="drag-handle"
+        title="გადაათრიე"
+        {...attributes}
+        {...listeners}
+      >
+        ⠿
+      </button>
       <div className="row-body">
         {editing ? (
           <textarea
