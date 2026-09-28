@@ -86,8 +86,6 @@ export default function PublicPage() {
   const { reserved, toggle, loading, error } = useReservations();
   const birthdayGifts = gifts.filter((g) => g.section === "birthday");
   const abroadGifts = gifts.filter((g) => g.section === "abroad");
-  const count = birthdayGifts.filter((g) => reserved.has(g.id)).length;
-  const total = birthdayGifts.length;
 
   return (
     <div className="pl">
@@ -110,19 +108,6 @@ export default function PublicPage() {
             დაბადების დღეზე, ან ისედაც, თუ გაგისწორდება. მონიშნე, რასაც ყიდულობ
             — რომ სხვებმაც იცოდნენ.
           </p>
-          {total > 0 && (
-            <div className="pl-progress">
-              <div className="pl-progress-track">
-                <div
-                  className="pl-progress-fill"
-                  style={{ width: `${(count / total) * 100}%` }}
-                />
-              </div>
-              <span>
-                დაჯავშნილია {count} / {total}
-              </span>
-            </div>
-          )}
         </header>
 
         {(error || giftsError) && (
