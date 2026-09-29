@@ -1,4 +1,9 @@
-import { useState, type CSSProperties, type KeyboardEvent } from "react";
+import {
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
 import type { Gift } from "./gifts";
 import { useGifts, useReservations } from "./reservations";
 import "./public.css";
@@ -161,6 +166,7 @@ export default function PublicPage() {
                       <LinkPill key={url} url={url} />
                     ))}
                   </div>
+                  <CopyButton text={gift.text} />
                 </div>
               );
             })}
@@ -243,7 +249,77 @@ function GiftCard(props: {
         ))}
       </div>
       <span className="pl-num">{String(props.index + 1).padStart(2, "0")}</span>
+      <CopyButton text={props.gift.text} />
     </li>
+  );
+}
+
+async function copyText(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // older browsers / non-https
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async (e: MouseEvent) => {
+    // keep the click from toggling the card underneath
+    e.stopPropagation();
+    await copyText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <button
+      type="button"
+      className={`pl-copy${copied ? " is-copied" : ""}`}
+      onClick={copy}
+      onKeyDown={(e) => e.stopPropagation()}
+      title={copied ? "დაკოპირდა" : "კოპირება"}
+      aria-label={copied ? "დაკოპირდა" : "კოპირება"}
+    >
+      {copied ? (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <polyline
+            points="3,8.5 6.5,12 13,4.5"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ) : (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <rect
+            x="5.5"
+            y="5.5"
+            width="8"
+            height="8"
+            rx="2"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M10.5 3.5v-.5a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      )}
+    </button>
   );
 }
 

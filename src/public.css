@@ -418,3 +418,47 @@
     animation: none;
   }
 }
+
+/* ---------- copy button ---------- */
+
+.pl-copy {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  margin: -5px -8px -5px 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  transition:
+    color 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.2s var(--ease-out);
+}
+
+.pl-copy:hover {
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.pl-copy:active {
+  transform: scale(0.92);
+}
+
+.pl-copy:focus-visible {
+  outline: none;
+  border-color: oklch(0.82 0.12 165 / 0.7);
+}
+
+.pl-copy.is-copied {
+  color: var(--mint);
+}
